@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#151515">
+<meta name="description" content="إدارة طلاب النقل المدرسي والأقساط والحضور والغياب">
+<link rel="manifest" href="manifest.webmanifest">
+<title>إدارة طلاب النقل المدرسي</title>
+<style>
+:root{--bg:#101010;--panel:#1d1d1d;--gold:#dfbd70;--text:#f7f3e9;--muted:#bcb7aa;--red:#c9473d;--line:#3c3932}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Tahoma,Arial,sans-serif;font-size:15px}
+header{background:linear-gradient(135deg,#171717,#302819);border-bottom:2px solid var(--gold);padding:22px 16px;text-align:center}
+header h1{font-size:22px;margin:0 0 8px;color:var(--gold)}header p{margin:0;color:#ddd;font-size:13px}
+main{max-width:900px;margin:auto;padding:14px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
+.stat,.card,.formbox{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px}
+.stat span{display:block;color:var(--muted);font-size:12px}.stat strong{display:block;margin-top:6px;color:var(--gold);font-size:18px;overflow-wrap:anywhere}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+input,select,textarea{width:100%;padding:11px;border:1px solid #555044;background:#111;color:#fff;border-radius:9px;font:inherit;min-width:0}
+button{border:0;border-radius:9px;padding:11px 14px;font:inherit;font-weight:bold;cursor:pointer;background:var(--gold);color:#17130b}
+button.secondary{background:#343434;color:#fff;border:1px solid #555}button.danger{background:#702d29;color:#fff}
+button.small{padding:7px 9px;font-size:12px}
+.formgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.field label{display:block;color:var(--muted);font-size:12px;margin-bottom:5px}
+.card{margin:12px 0}.studenthead{display:flex;align-items:center;justify-content:space-between;gap:8px}.studenthead h3{margin:0;color:var(--gold);font-size:17px;overflow-wrap:anywhere}
+.pill{font-size:11px;padding:5px 8px;border-radius:99px;background:#333;color:#eee;white-space:nowrap}.amounts{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}
+.amount{background:#111;border-radius:8px;padding:9px;text-align:center}.amount span{display:block;font-size:11px;color:var(--muted)}.amount b{display:block;margin-top:5px;font-size:14px}
+.actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.attendance{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}.attendance label{font-size:13px;color:var(--muted)}
+.empty{text-align:center;color:var(--muted);padding:25px}.sectiontitle{font-size:17px;color:var(--gold);margin:18px 0 10px}
+table{border-collapse:collapse;width:100%;font-size:13px}th,td{border:1px solid #555;padding:8px;text-align:right}th{background:#302819;color:var(--gold)}
+.reportonly{display:none}.hint{font-size:12px;color:var(--muted);line-height:1.7}
+@media(max-width:520px){.formgrid{grid-template-columns:1fr}.stats{gap:5px}.stat{padding:9px}.stat strong{font-size:15px}.studenthead h3{font-size:15px}.amounts{gap:4px}.amount{padding:7px 3px}}
+@media print{body{background:white;color:black}header{background:white;color:black;border-bottom:2px solid #333}header h1,header p{color:black}main{max-width:none;padding:0}.no-print,.formbox,.toolbar,.actions{display:none!important}.stats{display:none}.card{background:white;color:black;border:1px solid #999;break-inside:avoid}.studenthead h3,.sectiontitle{color:black}.amount{background:white;border:1px solid #ddd}.amount span{color:#333}.attendance{border-color:#aaa}.reportonly{display:block}.pill{border:1px solid #aaa;background:white;color:black}input,select{border:0;background:white;color:black;padding:0}.printtable{display:table!important}}
+</style>
+</head>
+<body>
+<header>
+<h1 id="schoolTitle">إدارة طلاب النقل المدرسي</h1>
+<p>الأقساط • الحضور والغياب • التقارير</p>
+</header>
+<main>
+<section class="stats no-print">
+ <div class="stat"><span>عدد الطلاب</span><strong id="studentCount">0</strong></div>
+ <div class="stat"><span>إجمالي الأقساط</span><strong id="totalDue">0 د.ع</strong></div>
+ <div class="stat"><span>المتبقي الكلي</span><strong id="totalRemain">0 د.ع</strong></div>
+</section>
+<section class="formbox no-print">
+ <div class="sectiontitle">إعدادات المدرسة</div>
+ <div class="formgrid">
+  <div class="field"><label>اسم المدرسة</label><input id="school" value="مدرسة نور الغدير الأهلية المختلطة الأساسية"></div>
+  <div class="field"><label>التاريخ لتسجيل الحضور</label><input id="attDate" type="date"></div>
+ </div>
+ <div class="sectiontitle">إضافة طالب جديد</div>
+ <form id="studentForm">
+  <div class="formgrid">
+   <div class="field"><label>اسم الطالب</label><input id="name" required placeholder="اسم الطالب"></div>
+   <div class="field"><label>الصف / المرحلة (اختياري)</label><input id="grade" placeholder="مثال: الثالث"></div>
+   <div class="field"><label>قيمة القسط الكلي (دينار)</label><input id="fee" type="number" min="0" required placeholder="80000"></div>
+   <div class="field"><label>المبلغ المدفوع حالياً (دينار)</label><input id="paid" type="number" min="0" value="0" required></div>
+  </div>
+  <div class="toolbar"><button type="submit">＋ إضافة الطالب</button><button type="button" class="secondary" id="exportBtn">تصدير نسخة احتياطية</button><button type="button" class="secondary" id="importBtn">استيراد نسخة</button><input type="file" id="importFile" accept="application/json" hidden></div>
+ </form>
+ <p class="hint">البيانات محفوظة محلياً على هذا الهاتف. استخدم «تصدير نسخة احتياطية» حتى تحتفظ بملف JSON يمكنك استيراده لاحقاً.</p>
+</section>
+<div class="toolbar no-print">
+ <input id="search" placeholder="🔎 ابحث عن طالب..." style="flex:1;min-width:170px">
+ <button id="printBtn">طباعة التقرير / PDF</button>
+ <button id="csvBtn" class="secondary">تصدير CSV</button>
+</div>
+<div class="sectiontitle">قائمة الطلاب</div>
+<div id="students"></div>
+<section class="reportonly">
+ <h2>تقرير إدارة طلاب النقل المدرسي</h2>
+ <p id="reportSchool"></p><p id="reportDate"></p>
+</section>
+<div class="hint no-print">ملاحظة: النسخة الأولية لا تزامن البيانات بين الأجهزة. اطبع التقرير إلى PDF من نافذة الطباعة، واحتفظ بنسخة احتياطية بانتظام.</div>
+</main>
+<script>
+const STORAGE_KEY='naqlStudentsData_v1';
+const today=new Date(); const iso=new Date(today.getTime()-today.getTimezoneOffset()*60000).toISOString().slice(0,10);
+document.getElementById('attDate').value=iso;
+let students=[];
+const starter=[
+ {name:'عبدالله مصطفى جواد',grade:'',fee:80000,paid:0},
+ {name:'رقية عماد مؤيد',grade:'',fee:60000,paid:0},
+ {name:'زينب عماد عبدالكاظم',grade:'',fee:80000,paid:0},
+ {name:'زينب معتز علاء',grade:'',fee:50000,paid:0},
+ {name:'محمد حيدر عبدالكريم',grade:'',fee:25000,paid:0},
+ {name:'عبدالرحمن عماد حميد',grade:'',fee:30000,paid:0}
+];
+function load(){try{const raw=localStorage.getItem(STORAGE_KEY);students=raw?JSON.parse(raw):starter.map((s,i)=>({...s,id:Date.now()+i,attendance:{}}));}catch(e){students=starter.map((s,i)=>({...s,id:Date.now()+i,attendance:{}}));}save();}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(students));renderStats();}
+function money(n){return (Number(n)||0).toLocaleString('en-US')+' د.ع';}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function remain(s){return Math.max(0,(Number(s.fee)||0)-(Number(s.paid)||0));}
+function renderStats(){document.getElementById('studentCount').textContent=students.length;document.getElementById('totalDue').textContent=money(students.reduce((a,s)=>a+(+s.fee||0),0));document.getElementById('totalRemain').textContent=money(students.reduce((a,s)=>a+remain(s),0));}
+function render(){
+ const q=document.getElementById('search').value.trim().toLowerCase(), date=document.getElementById('attDate').value||iso;
+ const filtered=students.filter(s=>s.name.toLowerCase().includes(q)||(s.grade||'').toLowerCase().includes(q));
+ const root=document.getElementById('students');
+ if(!filtered.length){root.innerHTML='<div class="empty">ماكو طلاب مطابقين للبحث.</div>';return;}
+ root.innerHTML=filtered.map(s=>{
+ const status=s.attendance?.[date]||'غير مسجل';
+ return `<article class="card" data-id="${s.id}">
+ <div class="studenthead"><h3>${esc(s.name)}</h3><span class="pill">${esc(s.grade||'بدون صف')}</span></div>
+ <div class="amounts">
+  <div class="amount"><span>القسط الكلي</span><b>${money(s.fee)}</b></div>
+  <div class="amount"><span>المدفوع</span><b style="color:#83c995">${money(s.paid)}</b></div>
+  <div class="amount"><span>المتبقي</span><b style="color:${remain(s)>0?'#f18b7f':'#83c995'}">${money(remain(s))}</b></div>
+ </div>
+ <div class="attendance"><label>الحضور بتاريخ ${esc(date)}:</label><span class="pill">${esc(status)}</span>
+  <button class="small" onclick="markAttendance(${s.id},'حاضر')">حاضر</button>
+  <button class="small secondary" onclick="markAttendance(${s.id},'غائب')">غائب</button>
+  <button class="small secondary" onclick="markAttendance(${s.id},'غير مسجل')">مسح</button>
+ </div>
+ <div class="actions no-print">
+  <button class="small" onclick="addPayment(${s.id})">＋ تسجيل دفعة</button>
+  <button class="small secondary" onclick="editStudent(${s.id})">تعديل البيانات</button>
+  <button class="small danger" onclick="deleteStudent(${s.id})">حذف الطالب</button>
+ </div>
+ </article>`;
+ }).join('');
+ document.getElementById('reportSchool').textContent='المدرسة: '+document.getElementById('school').value;
+ document.getElementById('reportDate').textContent='تاريخ التقرير: '+date;
+}
+function markAttendance(id,value){const s=students.find(x=>x.id===id);if(!s)return;s.attendance=s.attendance||{};const d=document.getElementById('attDate').value||iso;if(value==='غير مسجل')delete s.attendance[d];else s.attendance[d]=value;save();render();}
+function addPayment(id){const s=students.find(x=>x.id===id);if(!s)return;const left=remain(s);if(left<=0){alert('القسط مكتمل وماكو مبلغ متبقي.');return;}const val=prompt('المبلغ المستلم بالدينار. المتبقي: '+left,left);if(val===null)return;const n=Number(val);if(!Number.isFinite(n)||n<=0){alert('أدخل مبلغاً صحيحاً.');return;}s.paid=Math.min(Number(s.fee)||0,(Number(s.paid)||0)+n);save();render();}
+function editStudent(id){const s=students.find(x=>x.id===id);if(!s)return;const name=prompt('اسم الطالب:',s.name);if(name===null)return;if(!name.trim()){alert('الاسم ما يصير فارغ.');return;}const grade=prompt('الصف / المرحلة:',s.grade||'');if(grade===null)return;const fee=prompt('قيمة القسط الكلي بالدينار:',s.fee);if(fee===null)return;const paid=prompt('المبلغ المدفوع بالدينار:',s.paid);if(paid===null)return;if(Number(fee)<0||Number(paid)<0||!Number.isFinite(Number(fee))||!Number.isFinite(Number(paid))){alert('تأكد من المبالغ.');return;}s.name=name.trim();s.grade=grade.trim();s.fee=Number(fee);s.paid=Number(paid);save();render();}
+function deleteStudent(id){const s=students.find(x=>x.id===id);if(!s)return;if(confirm('متأكد تريد حذف الطالب '+s.name+'؟')){students=students.filter(x=>x.id!==id);save();render();}}
+document.getElementById('studentForm').addEventListener('submit',e=>{e.preventDefault();const name=document.getElementById('name').value.trim(),fee=Number(document.getElementById('fee').value),paid=Number(document.getElementById('paid').value||0);if(!name||fee<0||paid<0){alert('تأكد من الاسم والمبالغ.');return;}students.push({id:Date.now(),name,grade:document.getElementById('grade').value.trim(),fee,paid:Math.min(fee,paid),attendance:{}});save();e.target.reset();document.getElementById('paid').value='0';render();});
+document.getElementById('search').addEventListener('input',render);
+document.getElementById('attDate').addEventListener('change',render);
+document.getElementById('school').addEventListener('input',()=>{document.getElementById('schoolTitle').textContent=document.getElementById('school').value||'إدارة طلاب النقل المدرسي';render();});
+document.getElementById('printBtn').addEventListener('click',()=>{render();if(window.AndroidApp&&AndroidApp.printPage){AndroidApp.printPage();}else{window.print();}});
+document.getElementById('exportBtn').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({school:document.getElementById('school').value,students},null,2)],{type:'application/json'});downloadBlob(blob,'نسخة_طلاب_النقل.json');});
+document.getElementById('importBtn').addEventListener('click',()=>document.getElementById('importFile').click());
+document.getElementById('importFile').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!Array.isArray(data.students))throw Error();if(confirm('استبدال البيانات الحالية بالنسخة المستوردة؟')){students=data.students;document.getElementById('school').value=data.school||document.getElementById('school').value;document.getElementById('schoolTitle').textContent=document.getElementById('school').value;save();render();alert('تم استيراد النسخة.');}}catch(err){alert('الملف غير صالح.');}e.target.value='';});
+function downloadBlob(blob,name){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+document.getElementById('csvBtn').addEventListener('click',()=>{const rows=[['اسم الطالب','الصف','القسط الكلي','المدفوع','المتبقي','الحضور بتاريخ '+(document.getElementById('attDate').value||iso)]];students.forEach(s=>rows.push([s.name,s.grade||'',s.fee,s.paid,remain(s),s.attendance?.[document.getElementById('attDate').value||iso]||'غير مسجل']));const csv='\ufeff'+rows.map(r=>r.map(v=>'"'+String(v??'').replace(/"/g,'""')+'"').join(',')).join('\r\n');downloadBlob(new Blob([csv],{type:'text/csv;charset=utf-8'}),'تقرير_طلاب_النقل.csv');});
+load();document.getElementById('schoolTitle').textContent=document.getElementById('school').value;render();
+if('serviceWorker' in navigator && location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));}
+</script>
+</body>
+</html>
